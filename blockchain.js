@@ -2,8 +2,11 @@ const EC = require("elliptic").ec, ec = new EC("secp256k1");
 const Transaction = require("./transaction");
 const Block = require("./block");
 
-// Key pair used for minting.
-const MINT_KEY_PAIR = ec.genKeyPair();
+// Key pair used for minting, defined as such to be the same across classes.
+const MINT_PRIVATE_ADDRESS = "aebc585c4f06497106e373d862d11e5cb75d4a9c8e4dbe88e6dca24629572282";
+const MINT_KEY_PAIR = ec.keyFromPrivate(MINT_PRIVATE_ADDRESS, "hex");
+const MINT_PUBLIC_KEY = MINT_KEY_PAIR.getPublic("hex");
+
 // Public address of the key pair used for minting.
 const MINT_PUBLIC_ADDRESS = MINT_KEY_PAIR.getPublic("hex");
 // Key pair of the account holding the intial currency release.
@@ -77,7 +80,7 @@ class Blockchain {
     */
     addBlock(block) {
         block.prevHash = this.getLastBlock().hash;
-        block.hash = block.getHash();
+        block.hash = Block.getHash(block);
 
         block.mine(this.difficulty);
         this.chain.push(block);
@@ -91,7 +94,7 @@ class Blockchain {
         @param the transaction to add.
     */
     addTransaction(transaction) {
-        if (transaction.isValid(transaction, this)) {
+        if (Transaction.isValid(transaction, this)) {
             this.transactions.push(transaction);
         }
     }
@@ -129,15 +132,15 @@ class Blockchain {
 
         @param the Blockchain object to be tested, this by default.
     */
-    isValid(blockchain = this) {
+    static isValid(blockchain) {
         for (let i = 1; i < blockchain.chain.length; i++) {
             const currentBlock = blockchain.chain[i];
             const prevBlock = blockchain.chain[i-1];
 
             if (
-                currentBlock.hash !== currentBlock.getHash() || 
+                currentBlock.hash !== Block.getHash(currentBlock) || 
                 prevBlock.hash !== currentBlock.prevHash || 
-                !currentBlock.hasValidTransactions(blockchain)
+                !Block.hasValidTransactions(currentBlock, blockchain)
             ) {
                 return false;
             }
@@ -145,3 +148,9 @@ class Blockchain {
         return true;
     }
 }
+
+console.log(HOLDER_KEY_PAIR.getPrivate("hex"));
+
+const ourChain = new Blockchain();
+
+module.exports = {Blockchain, ourChain};

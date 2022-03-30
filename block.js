@@ -17,7 +17,7 @@ class Block {
     constructor(timestamp = "", data = []) {
         this.timestamp = timestamp;
         this.data = data;
-        this.hash = this.getHash();
+        this.hash = Block.getHash(this);
         this.prevHash = "";
         this.nonce = 0;
     }
@@ -28,8 +28,8 @@ class Block {
         (essential to the blockchain's security), the block's timestamp, the block's data,
         and the block's nonce.
     */
-    getHash() {
-        return SHA256(this.prevHash + this.timestamp + JSON.stringify(this.data) + this.nonce);
+    static getHash(block) {
+        return SHA256(block.prevHash + block.timestamp + JSON.stringify(block.data) + block.nonce);
     }
 
     /*
@@ -43,7 +43,7 @@ class Block {
     mine(difficulty) {
         while(!this.hash.startsWith(Array(difficulty + 1).join("0"))) {
             this.nonce++;
-            this.hash = this.getHash();
+            this.hash = Block.getHash(this);
         }
     }
 
@@ -56,10 +56,10 @@ class Block {
 
         @param the chain the block is being added to.
     */
-    hasValidTransactions(chain) {
+    static hasValidTransactions(block, chain) {
         let gas = 0, reward = 0;
 
-        this.data.forEach(transaction => {
+        block.data.forEach(transaction => {
             if (transaction.from !== MINT_PUBLIC_ADDRESS) {
                 gas += transaction.gas;
             } else {
@@ -69,8 +69,8 @@ class Block {
 
         return (
             reward - gas === chain.reward &&
-            this.data.every(transaction => transaction.isValid(transaction, chain)) && 
-            this.data.filter(transaction => transaction.from === MINT_PUBLIC_ADDRESS).length === 1
+            block.data.every(transaction => transaction.isValid(transaction, chain)) && 
+            block.data.filter(transaction => transaction.from === MINT_PUBLIC_ADDRESS).length === 1
         );
     }
 }

@@ -46,7 +46,7 @@ class Transaction {
         @param the transaction to test.
         @param the chain to test this transaction for.
     */
-    isValid(tx, chain) {
+    static isValid(tx, chain) {
         return (
             tx.from &&
             tx.to &&
